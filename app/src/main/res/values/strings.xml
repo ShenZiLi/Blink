@@ -76,4 +76,58 @@
     <!-- Theme -->
     <string name="theme_light">亮色</string>
     <string name="theme_dark">暗色</string>
+
+    <!-- EarClock 首页 -->
+    <string name="earclock_home_title">EarClock</string>
+    <string name="earclock_add">添加闹钟</string>
+    <string name="earclock_delete">删除</string>
+    <string name="earclock_empty_title">暂无闹钟</string>
+    <string name="earclock_empty_subtitle">点击右上角 + 添加耳机闹钟</string>
+    <string name="earclock_dialog_delete_title">删除闹钟</string>
+    <string name="earclock_dialog_delete_message">确定要删除闹钟「%1$s」吗？</string>
+    <string name="earclock_dialog_delete_confirm">删除</string>
+    <string name="earclock_dialog_delete_cancel">取消</string>
+    <string name="earclock_default_name">耳机闹钟</string>
+
+    <!-- 星期 -->
+    <string name="day_mon">一</string>
+    <string name="day_tue">二</string>
+    <string name="day_wed">三</string>
+    <string name="day_thu">四</string>
+    <string name="day_fri">五</string>
+    <string name="day_sat">六</string>
+    <string name="day_sun">日</string>
+
+    <!-- 频率 -->
+    <string name="earclock_freq_once">响一次</string>
+    <string name="earclock_freq_workdays">工作日</string>
+    <string name="earclock_freq_custom">自定义</string>
+
+    <!-- 设置闹钟页 -->
+    <string name="earclock_edit_title">设置闹钟</string>
+    <string name="earclock_edit_cancel">取消</string>
+    <string name="earclock_edit_done">完成</string>
+    <string name="earclock_countdown_prefix">距离下次响铃还有</string>
+    <string name="earclock_edit_days_label">重复星期</string>
+    <string name="earclock_edit_workday_type">工作日类型</string>
+    <string name="earclock_edit_workday_weekdays">周一至周五</string>
+    <string name="earclock_edit_name_label">闹钟名称</string>
+    <string name="earclock_edit_ringtone">铃声</string>
+    <string name="earclock_edit_ringtone_default">系统默认闹铃</string>
+    <string name="earclock_edit_vibration">振动</string>
+    <string name="earclock_edit_snooze">稍后提醒</string>
+    <string name="earclock_edit_snooze_interval">提醒间隔</string>
+    <string name="earclock_edit_snooze_limit">最大次数</string>
+    <string name="earclock_edit_snooze_times_label">%1$d 次</string>
+    <string name="earclock_edit_snooze_on" translatable="false">已开启</string>
+
+    <!-- 全屏闹钟页 -->
+    <string name="earclock_playing_in_headphone">已在耳机中播放闹铃</string>
+    <string name="earclock_snooze">稍后提醒</string>
+    <string name="earclock_dismiss">立即关闭</string>
+    <string name="earclock_snooze_times">稍后提醒 %1$d 次</string>
+    <string name="earclock_notification_title">EarClock 闹钟</string>
+    <string name="earclock_notification_text">%1$s 时间到</string>
+    <string name="earclock_channel_name">耳机闹钟</string>
+    <string name="earclock_channel_desc">连接耳机时通过耳机播放的闹钟</string>
 </resources>

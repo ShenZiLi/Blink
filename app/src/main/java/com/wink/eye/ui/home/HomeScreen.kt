@@ -143,12 +143,14 @@ fun HomeScreen(
                 ) {
                     item { Spacer(Modifier.height(8.dp)) }
                     items(rules, key = { it.id }) { rule ->
-                        RuleCard(
-                            rule = rule,
-                            onToggle = { viewModel.toggleEnabled(rule) },
-                        onDelete = { ruleToDelete = rule },
-                            onClick = { onEditRule(rule.id) }
-                        )
+                        Box(Modifier.animateItem()) {
+                            RuleCard(
+                                rule = rule,
+                                onToggle = { viewModel.toggleEnabled(rule) },
+                    onDelete = { ruleToDelete = rule },
+                                onClick = { onEditRule(rule.id) }
+                            )
+                        }
                     }
                     item { Spacer(Modifier.height(8.dp)) }
                 }

@@ -12,13 +12,31 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.wink.eye.data.IntervalUnit
 import com.wink.eye.data.Rule
@@ -27,6 +45,9 @@ import com.wink.eye.data.RuleType
 import com.wink.eye.service.IntervalAlarmScheduler
 import com.wink.eye.service.ScreenMonitorService
 import com.wink.eye.ui.edit.EditScreen
+import com.wink.eye.ui.earclock.EarClockEditScreen
+import com.wink.eye.ui.earclock.EarClockHomeScreen
+import com.wink.eye.ui.earclock.EarClockHomeViewModel
 import com.wink.eye.ui.home.HomeScreen
 import com.wink.eye.ui.home.HomeViewModel
 import com.wink.eye.ui.theme.ThemeManager
@@ -84,8 +105,63 @@ fun WinkNavHost(repository: RuleRepository) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory())
+    val earClockViewModel: EarClockHomeViewModel = viewModel(factory = EarClockHomeViewModel.Factory())
+    val earClockRepository = WinkApp.instance.earClockRepository
 
-    NavHost(navController = navController, startDestination = "home") {
+    // 底部导航栏仅在主页面（home/earclock）显示
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val showBottomBar = currentRoute == "home" || currentRoute == "earclock"
+
+    Scaffold(
+        bottomBar = {
+            if (showBottomBar) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = currentRoute == "home",
+                        onClick = {
+                            navController.navigate("home") {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Visibility, contentDescription = null) },
+                        label = { Text(stringResource(R.string.app_name)) }
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == "earclock",
+                        onClick = {
+                            navController.navigate("earclock") {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Headphones, contentDescription = null) },
+                        label = { Text(stringResource(R.string.earclock_home_title)) }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "home",
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                slideInVertically(initialOffsetY = { it / 16 }) + fadeIn(tween(260))
+            },
+            exitTransition = {
+                fadeOut(tween(220))
+            },
+            popEnterTransition = {
+                slideInVertically(initialOffsetY = { -it / 16 }) + fadeIn(tween(260))
+            },
+            popExitTransition = {
+                fadeOut(tween(220))
+            }
+        ) {
         composable("home") {
             // 每次进入首页时重新加载规则
             LaunchedEffect(Unit) {
@@ -124,6 +200,42 @@ fun WinkNavHost(repository: RuleRepository) {
                 },
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable("earclock") {
+            LaunchedEffect(Unit) {
+                earClockViewModel.loadAlarms()
+            }
+            EarClockHomeScreen(
+                onAddAlarm = { navController.navigate("earclock/edit/new") },
+                onEditAlarm = { alarmId -> navController.navigate("earclock/edit/$alarmId") },
+                viewModel = earClockViewModel
+            )
+        }
+
+        composable("earclock/edit/new") {
+            EarClockEditScreen(
+                existingAlarm = null,
+                onSave = { alarm ->
+                    earClockViewModel.saveAlarm(alarm)
+                    navController.popBackStack()
+                },
+                onCancel = { navController.popBackStack() }
+            )
+        }
+
+        composable("earclock/edit/{alarmId}") { backStackEntry ->
+            val alarmId = backStackEntry.arguments?.getString("alarmId") ?: return@composable Unit
+            val alarm = earClockRepository.getById(alarmId)
+            EarClockEditScreen(
+                existingAlarm = alarm,
+                onSave = { updatedAlarm ->
+                    earClockViewModel.saveAlarm(updatedAlarm)
+                    navController.popBackStack()
+                },
+                onCancel = { navController.popBackStack() }
+            )
+        }
         }
     }
 }

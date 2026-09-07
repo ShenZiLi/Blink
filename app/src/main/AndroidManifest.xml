@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <application
         android:name=".WinkApp"
@@ -32,6 +33,13 @@
 
         <activity
             android:name=".ReminderActivity"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.Wink.Reminder" />
+
+        <activity
+            android:name=".EarClockAlarmActivity"
             android:excludeFromRecents="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
@@ -60,6 +68,10 @@
 
         <receiver
             android:name=".service.DismissReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".service.EarClockAlarmReceiver"
             android:exported="false" />
 
     </application>
