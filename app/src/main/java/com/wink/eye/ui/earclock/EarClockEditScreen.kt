@@ -330,11 +330,15 @@ private fun WheelTimePicker(
     }
 }
 
-/** 单列滚轮：以穿过中线的值确定选中，切换项时触发触觉反馈 */
+/** 单列滚轮：以穿过中线的值确定选中，切换项时触发触觉反馈，支持循环滚动 */
 @Composable
 private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit) {
     val itemHeight = 48.dp
-    val listState: LazyListState = rememberLazyListState(initialFirstVisibleItemIndex = (selected - 1).coerceAtLeast(0))
+    val totalItems = range.last - range.first + 1
+    // 循环滚动：生成一个非常长的列表，选中值放在中间区域使得可以双向滚动
+    val items = List(totalItems * 1000) { (it + range.first) % (totalItems) + range.first }
+    val initialIndex = (items.size / 2) - (totalItems / 2) + (selected - range.first)
+    val listState: LazyListState = rememberLazyListState(initialFirstVisibleItemIndex = (initialIndex - 1).coerceAtLeast(0))
     val haptic = LocalHapticFeedback.current
     val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
 
@@ -351,7 +355,7 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
                 skipInit = false
                 return@collect
             }
-            val v = centeredValueFrom(i0, scrollOffset, itemHeightPx)
+            val v = centeredValueFrom(i0, scrollOffset, itemHeightPx, range)
             if (v != currentSelected) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onSelect(v)
@@ -368,13 +372,16 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
                     val v = centeredValueFrom(
                         listState.firstVisibleItemIndex,
                         listState.firstVisibleItemScrollOffset,
-                        itemHeightPx
+                        itemHeightPx,
+                        range
                     )
                     if (v != currentSelected) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(v)
                     }
-                    listState.scrollToItem((v - 1).coerceAtLeast(0))
+                    // 保持滚动位置在中间区域，实现无限循环错觉
+                    val vIndex = (items.size / 2) - (totalItems / 2) + (v - range.first)
+                    listState.scrollToItem((vIndex - 1).coerceAtLeast(0))
                 }
             }
     }
@@ -386,7 +393,7 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
             .width(96.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        itemsIndexed(range.toList()) { index, value ->
+        itemsIndexed(items) { index, value ->
             val isSel = value == selected
             Box(
                 modifier = Modifier
@@ -409,14 +416,21 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
 }
 
 /**
- * 纯算术计算当前穿过可视区垂直中线的值。
+ * 纯算术计算当前穿过可视区垂直中线的值，支持循环范围映射。
  * @param i0 第一个可见项索引
  * @param scrollOffset 第一个可见项已被滚过的像素
  * @param itemHeightPx 单项高度（像素）
+ * @param range 循环范围（如 0..23, 0..59）
  * viewport 高度 = 3 * itemHeight，中线在 1.5 * itemHeight 处。
  */
-private fun centeredValueFrom(i0: Int, scrollOffset: Int, itemHeightPx: Float): Int =
-    i0 + ((1.5f * itemHeightPx + scrollOffset) / itemHeightPx).toInt()
+private fun centeredValueFrom(i0: Int, scrollOffset: Int, itemHeightPx: Float, range: IntRange): Int {
+    val totalItems = range.last - range.first + 1
+    val raw = i0 + ((1.5f * itemHeightPx + scrollOffset) / itemHeightPx).toInt()
+    // 模运算实现循环映射：处理正负索引
+    val normalized = (raw - range.first) % totalItems
+    val mapped = if (normalized < 0) normalized + totalItems else normalized
+    return mapped + range.first
+}
 
 /** 设置分组卡片 */
 @Composable
