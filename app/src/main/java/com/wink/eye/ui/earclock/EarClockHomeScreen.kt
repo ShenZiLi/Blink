@@ -17,6 +17,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.ModeNight
+
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,6 +36,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import com.wink.eye.R
 import com.wink.eye.data.EarClockAlarm
 import com.wink.eye.data.EarClockFrequency
+import com.wink.eye.ui.theme.ThemeManager
+import com.wink.eye.ui.theme.ThemeMode
 import java.util.Calendar
 import java.util.Locale
 
@@ -58,6 +64,7 @@ fun EarClockHomeScreen(
 ) {
     val alarms by viewModel.alarms.collectAsState()
     val context = LocalContext.current
+    val themeMode by ThemeManager.themeMode.collectAsState(initial = ThemeMode.LIGHT)
 
     var alarmToDelete by remember { mutableStateOf<EarClockAlarm?>(null) }
     alarmToDelete?.let { alarm ->
@@ -81,48 +88,63 @@ fun EarClockHomeScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.earclock_home_title)) },
-                actions = {
-                    IconButton(onClick = onAddAlarm) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(R.string.earclock_add)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    key(themeMode.name) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.earclock_home_title)) },
+                    actions = {
+                        IconButton(onClick = { ThemeManager.toggle(context) }) {
+                            Icon(
+                                imageVector = when (themeMode) {
+                                    ThemeMode.LIGHT -> Icons.Default.LightMode
+                                    ThemeMode.DARK -> Icons.Default.ModeNight
+                                },
+                                contentDescription = when (themeMode) {
+                                    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                                    ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                                }
+                            )
+                        }
+                        IconButton(onClick = onAddAlarm) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = stringResource(R.string.earclock_add)
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
-            )
-        }
-    ) { padding ->
-        if (alarms.isEmpty()) {
-            EmptyState(modifier = Modifier.padding(padding))
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item { Spacer(Modifier.height(8.dp)) }
-                items(alarms, key = { it.id }) { alarm ->
-                    Box(Modifier.animateItem()) {
-                        AlarmCard(
-                            alarm = alarm,
-                            onToggle = { viewModel.toggleEnabled(alarm) },
-                            onDelete = { alarmToDelete = alarm },
-                            onClick = { onEditAlarm(alarm.id) }
-                        )
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { padding ->
+            if (alarms.isEmpty()) {
+                EmptyState(modifier = Modifier.padding(padding))
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item { Spacer(Modifier.height(8.dp)) }
+                    items(alarms, key = { it.id }) { alarm ->
+                        Box(Modifier.animateItem()) {
+                            AlarmCard(
+                                alarm = alarm,
+                                onToggle = { viewModel.toggleEnabled(alarm) },
+                                onDelete = { alarmToDelete = alarm },
+                                onClick = { onEditAlarm(alarm.id) }
+                            )
+                        }
                     }
+                    item { Spacer(Modifier.height(8.dp)) }
                 }
-                item { Spacer(Modifier.height(8.dp)) }
             }
         }
     }
