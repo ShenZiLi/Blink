@@ -5,6 +5,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,8 +23,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
@@ -34,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,6 +51,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -80,8 +82,9 @@ fun EarClockEditScreen(
     val context = LocalContext.current
 
     var name by remember { mutableStateOf(existingAlarm?.name ?: context.getString(R.string.earclock_default_name)) }
-    var hour by remember { mutableIntStateOf(existingAlarm?.hour ?: 7) }
-    var minute by remember { mutableIntStateOf(existingAlarm?.minute ?: 0) }
+    // 新增闹钟默认滚轮时间为当前时间
+    var hour by remember { mutableIntStateOf(existingAlarm?.hour ?: Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) }
+    var minute by remember { mutableIntStateOf(existingAlarm?.minute ?: Calendar.getInstance().get(Calendar.MINUTE)) }
     var frequency by remember { mutableStateOf(existingAlarm?.frequency ?: EarClockFrequency.ONCE) }
     var daysOfWeek by remember { mutableStateOf(existingAlarm?.daysOfWeek ?: emptySet()) }
     var ringtoneUri by remember { mutableStateOf(existingAlarm?.ringtoneUri) }
@@ -134,15 +137,10 @@ fun EarClockEditScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(8.dp))
-
             CountdownSection(hour, minute, frequency, daysOfWeek)
-
-            Spacer(Modifier.height(16.dp))
 
             WheelTimePicker(
                 hour = hour,
@@ -150,8 +148,6 @@ fun EarClockEditScreen(
                 onHourChange = { hour = it },
                 onMinuteChange = { minute = it }
             )
-
-            Spacer(Modifier.height(16.dp))
 
             // 频率切换
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -172,34 +168,59 @@ fun EarClockEditScreen(
                 )
             }
 
-            // 自定义频率：一周自选
+            // 自定义频率：一周自选（一行等分铺满）
             if (frequency == EarClockFrequency.CUSTOM) {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.earclock_edit_days_label),
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Spacer(Modifier.height(8.dp))
                 val dayNames = listOf(
                     stringResource(R.string.day_mon), stringResource(R.string.day_tue),
                     stringResource(R.string.day_wed), stringResource(R.string.day_thu),
                     stringResource(R.string.day_fri), stringResource(R.string.day_sat),
                     stringResource(R.string.day_sun)
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     CUSTOM_DAYS.forEachIndexed { index, day ->
-                        FilterChip(
-                            selected = day in daysOfWeek,
+                        val sel = day in daysOfWeek
+                        Surface(
                             onClick = {
-                                daysOfWeek = if (day in daysOfWeek) daysOfWeek - day else daysOfWeek + day
+                                daysOfWeek = if (sel) daysOfWeek - day else daysOfWeek + day
                             },
-                            label = { Text(dayNames[index]) }
-                        )
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (sel) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceContainerLow
+                            },
+                            border = if (sel) {
+                                BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                            } else {
+                                null
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = dayNames[index],
+                                    fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Medium,
+                                    color = if (sel) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
-
-            Spacer(Modifier.height(20.dp))
 
             SettingsCard(
                 name = name,
@@ -224,13 +245,11 @@ fun EarClockEditScreen(
                 onSnoozeRepeatLimitChange = { snoozeRepeatLimit = it },
                 frequency = frequency
             )
-
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
-/** 距离下次响铃倒计时：每秒刷新 */
+/** 距离下次响铃倒计时：每秒刷新，单行展示 */
 @Composable
 private fun CountdownSection(hour: Int, minute: Int, frequency: EarClockFrequency, daysOfWeek: Set<Int>) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -241,16 +260,9 @@ private fun CountdownSection(hour: Int, minute: Int, frequency: EarClockFrequenc
         }
     }
     Text(
-        text = stringResource(R.string.earclock_countdown_prefix),
+        text = "${stringResource(R.string.earclock_countdown_prefix)} ${remainingLabel(now, hour, minute, frequency, daysOfWeek)}",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-    Spacer(Modifier.height(4.dp))
-    Text(
-        text = remainingLabel(now, hour, minute, frequency, daysOfWeek),
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontWeight = FontWeight.Medium
     )
 }
 
@@ -317,20 +329,45 @@ private fun WheelTimePicker(
     }
 }
 
-/** 单列滚轮：居中选中态高亮加粗 */
+/** 单列滚轮：以穿过中线的值确定选中，切换项时触发触觉反馈 */
 @Composable
 private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit) {
     val itemHeight = 48.dp
     val listState: LazyListState = rememberLazyListState(initialFirstVisibleItemIndex = (selected - 1).coerceAtLeast(0))
+    val haptic = LocalHapticFeedback.current
+    val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
 
-    LaunchedEffect(selected) {
-        listState.scrollToItem((selected - 1).coerceAtLeast(0))
-    }
+    // 跳到首帧：避免初始定位误触发选中/振动
+    var skipInit by remember { mutableStateOf(true) }
     LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemIndex }
-            .collect { idx ->
-                val v = (idx + 1).coerceIn(range.first, range.last)
-                if (v != selected) onSelect(v)
+        snapshotFlow {
+            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
+        }.collect { (i0, scrollOffset) ->
+            if (skipInit) {
+                skipInit = false
+                return@collect
+            }
+            val v = centeredValueFrom(i0, scrollOffset, itemHeightPx)
+            if (v != selected) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onSelect(v)
+            }
+        }
+    }
+
+    // 松手吸附：滚动停滞后把命中的值对齐到中线。
+    // 注意：绝不根据 selected 反向 scrollToItem 跟随，否则拖动时与用户滚动打架导致跳值。
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress }
+            .collect { scrolling ->
+                if (!scrolling) {
+                    val v = centeredValueFrom(
+                        listState.firstVisibleItemIndex,
+                        listState.firstVisibleItemScrollOffset,
+                        itemHeightPx
+                    )
+                    listState.scrollToItem((v - 1).coerceAtLeast(0))
+                }
             }
     }
 
@@ -338,8 +375,7 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
         state = listState,
         modifier = Modifier
             .height(itemHeight * 3)
-            .width(96.dp)
-            .alpha(1f),
+            .width(96.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         itemsIndexed(range.toList()) { index, value ->
@@ -363,6 +399,16 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
         }
     }
 }
+
+/**
+ * 纯算术计算当前穿过可视区垂直中线的值。
+ * @param i0 第一个可见项索引
+ * @param scrollOffset 第一个可见项已被滚过的像素
+ * @param itemHeightPx 单项高度（像素）
+ * viewport 高度 = 3 * itemHeight，中线在 1.5 * itemHeight 处。
+ */
+private fun centeredValueFrom(i0: Int, scrollOffset: Int, itemHeightPx: Float): Int =
+    i0 + ((1.5f * itemHeightPx + scrollOffset) / itemHeightPx).toInt()
 
 /** 设置分组卡片 */
 @Composable
@@ -402,7 +448,7 @@ private fun SettingsCard(
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
@@ -432,7 +478,7 @@ private fun SettingsCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -454,7 +500,7 @@ private fun SettingsCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -482,7 +528,7 @@ private fun SettingRow(title: String, value: String, chevron: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
@@ -504,7 +550,7 @@ private fun ClickableSettingRow(title: String, value: String, onClick: () -> Uni
         modifier = Modifier
             .fillMaxWidth()
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
@@ -522,7 +568,7 @@ private fun SwitchRow(title: String, checked: Boolean, onCheckedChange: (Boolean
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))

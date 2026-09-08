@@ -1,5 +1,6 @@
 package com.wink.eye.ui.earclock
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,8 +94,9 @@ fun EarClockHomeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }
@@ -158,11 +160,16 @@ private fun AlarmCard(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
+        border = if (alarm.enabled) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
+        } else {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        },
         colors = CardDefaults.cardColors(
             containerColor = if (alarm.enabled) {
-                MaterialTheme.colorScheme.primaryContainer
+                MaterialTheme.colorScheme.surfaceContainerHigh
             } else {
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surfaceContainerLow
             }
         )
     ) {
