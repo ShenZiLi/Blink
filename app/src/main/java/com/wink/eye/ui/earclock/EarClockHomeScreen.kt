@@ -1,7 +1,5 @@
 package com.wink.eye.ui.earclock
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,15 +87,6 @@ fun EarClockHomeScreen(
         )
     }
 
-    val bgColor by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.background,
-        animationSpec = tween(300)
-    )
-    val surfaceColor by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.surface,
-        animationSpec = tween(300)
-    )
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -123,13 +112,13 @@ fun EarClockHomeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = surfaceColor,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                     actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         },
-        containerColor = bgColor
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (alarms.isEmpty()) {
             EmptyState(modifier = Modifier.padding(padding))

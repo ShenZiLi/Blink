@@ -1,7 +1,5 @@
 package com.wink.eye.ui.home
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -99,21 +97,12 @@ fun HomeScreen(
         )
     }
 
-    val bgColor by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.background,
-        animationSpec = tween(300)
-    )
-    val surfaceColor by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.surface,
-        animationSpec = tween(300)
-    )
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Wink") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = surfaceColor,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                     actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
@@ -139,7 +128,7 @@ fun HomeScreen(
                 }
             )
         },
-        containerColor = bgColor
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (rules.isEmpty()) {
             EmptyState(modifier = Modifier.padding(padding))

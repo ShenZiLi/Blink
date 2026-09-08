@@ -1,6 +1,8 @@
 package com.wink.eye.ui.theme
 
 import android.content.Context
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -165,15 +167,20 @@ fun WinkTheme(content: @Composable () -> Unit) {
     val themeMode by ThemeManager.themeMode.collectAsState(initial = ThemeMode.LIGHT)
 
     val darkTheme = themeMode == ThemeMode.DARK
-
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = WinkTypography,
-        shapes = WinkShapes,
-        content = content
-    )
+    // Crossfade 整体过渡：整个 UI 同时切换，消除不同组件动效不同步导致的残影
+    Crossfade(
+        targetState = darkTheme,
+        animationSpec = tween(300)
+    ) { _ ->
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = WinkTypography,
+            shapes = WinkShapes,
+            content = content
+        )
+    }
 }
 
 /** 现代圆角：小 6、按钮 10、卡片 14、大容器 20、胶囊/pill 28 */
