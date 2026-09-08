@@ -152,9 +152,17 @@ fun WinkNavHost(repository: RuleRepository) {
             navController = navController,
             startDestination = "home",
             modifier = Modifier.padding(innerPadding),
+            // 全局默认：编辑页加入/返回淡入淡出
+            enterTransition = { fadeIn(tween(300)) },
+            exitTransition = { fadeOut(tween(250)) },
+            popEnterTransition = { fadeIn(tween(300)) },
+            popExitTransition = { fadeOut(tween(250)) }
+        ) {
+        composable(
+            "home",
             enterTransition = {
-                val initialIdx = routeOrder.indexOf(initialState.destination.route)
                 val targetIdx = routeOrder.indexOf(targetState.destination.route)
+                val initialIdx = routeOrder.indexOf(initialState.destination.route)
                 if (targetIdx > initialIdx) {
                     slideInHorizontally { width -> width } + fadeIn(tween(300))
                 } else {
@@ -162,22 +170,15 @@ fun WinkNavHost(repository: RuleRepository) {
                 }
             },
             exitTransition = {
-                val initialIdx = routeOrder.indexOf(initialState.destination.route)
                 val targetIdx = routeOrder.indexOf(targetState.destination.route)
+                val initialIdx = routeOrder.indexOf(initialState.destination.route)
                 if (targetIdx > initialIdx) {
                     slideOutHorizontally { width -> -width } + fadeOut(tween(250))
                 } else {
                     slideOutHorizontally { width -> width } + fadeOut(tween(250))
                 }
-            },
-            popEnterTransition = {
-                slideInHorizontally { width -> -width } + fadeIn(tween(300))
-            },
-            popExitTransition = {
-                slideOutHorizontally { width -> width } + fadeOut(tween(250))
             }
         ) {
-        composable("home") {
             // 每次进入首页时重新加载规则
             LaunchedEffect(Unit) {
                 homeViewModel.loadRules()
@@ -217,7 +218,27 @@ fun WinkNavHost(repository: RuleRepository) {
             )
         }
 
-        composable("earclock") {
+        composable(
+            "earclock",
+            enterTransition = {
+                val targetIdx = routeOrder.indexOf(targetState.destination.route)
+                val initialIdx = routeOrder.indexOf(initialState.destination.route)
+                if (targetIdx > initialIdx) {
+                    slideInHorizontally { width -> width } + fadeIn(tween(300))
+                } else {
+                    slideInHorizontally { width -> -width } + fadeIn(tween(300))
+                }
+            },
+            exitTransition = {
+                val targetIdx = routeOrder.indexOf(targetState.destination.route)
+                val initialIdx = routeOrder.indexOf(initialState.destination.route)
+                if (targetIdx > initialIdx) {
+                    slideOutHorizontally { width -> -width } + fadeOut(tween(250))
+                } else {
+                    slideOutHorizontally { width -> width } + fadeOut(tween(250))
+                }
+            }
+        ) {
             LaunchedEffect(Unit) {
                 earClockViewModel.loadAlarms()
             }
