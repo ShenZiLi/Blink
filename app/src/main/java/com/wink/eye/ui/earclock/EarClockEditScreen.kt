@@ -337,7 +337,7 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
     val totalItems = range.last - range.first + 1
     // 循环滚动：生成一个非常长的列表，选中值放在中间区域使得可以双向滚动
     val items = List(totalItems * 1000) { (it + range.first) % (totalItems) + range.first }
-    val initialIndex = (items.size / 2) - (totalItems / 2) + (selected - range.first)
+    val initialIndex = (items.size / 2) + (selected - range.first)
     val listState: LazyListState = rememberLazyListState(initialFirstVisibleItemIndex = (initialIndex - 1).coerceAtLeast(0))
     val haptic = LocalHapticFeedback.current
     val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
@@ -380,7 +380,7 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
                         onSelect(v)
                     }
                     // 保持滚动位置在中间区域，实现无限循环错觉
-                    val vIndex = (items.size / 2) - (totalItems / 2) + (v - range.first)
+                    val vIndex = (items.size / 2) + (v - range.first)
                     listState.scrollToItem((vIndex - 1).coerceAtLeast(0))
                 }
             }
