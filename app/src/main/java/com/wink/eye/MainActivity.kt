@@ -152,11 +152,11 @@ fun WinkNavHost(repository: RuleRepository) {
             navController = navController,
             startDestination = "home",
             modifier = Modifier.padding(innerPadding),
-            // 全局默认：编辑页加入/返回淡入淡出
+            // 全局默认：编辑页进入淡入淡出，返回时左右滑动（pop 从编辑页回到 tab 页）
             enterTransition = { fadeIn(tween(300)) },
             exitTransition = { fadeOut(tween(250)) },
-            popEnterTransition = { fadeIn(tween(300)) },
-            popExitTransition = { fadeOut(tween(250)) }
+            popEnterTransition = { slideInHorizontally { width -> -width } + fadeIn(tween(300)) },
+            popExitTransition = { slideOutHorizontally { width -> width } + fadeOut(tween(250)) }
         ) {
         composable(
             "home",
