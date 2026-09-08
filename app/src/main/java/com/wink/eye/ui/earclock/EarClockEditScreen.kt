@@ -116,7 +116,7 @@ fun EarClockEditScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onCancel) {
-                    Text(stringResource(R.string.earclock_edit_cancel), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.edit_back), color = MaterialTheme.colorScheme.primary)
                 }
                 Text(
                     text = stringResource(R.string.earclock_edit_title),
@@ -131,7 +131,7 @@ fun EarClockEditScreen(
                     },
                     enabled = isValid(frequency, daysOfWeek)
                 ) {
-                    Text(stringResource(R.string.earclock_edit_done), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.edit_save), color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
