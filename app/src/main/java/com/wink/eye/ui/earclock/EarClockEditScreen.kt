@@ -64,6 +64,8 @@ import com.wink.eye.data.EarClockFrequency
 import com.wink.eye.data.VibrationMode
 import com.wink.eye.service.EarClockAlarmScheduler
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.onEach
 import java.util.Calendar
 import java.util.UUID
 
@@ -335,8 +337,10 @@ private fun WheelTimePicker(
 private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit) {
     val itemHeight = 48.dp
     val totalItems = range.last - range.first + 1
-    // 循环滚动：生成一个非常长的列表，选中值放在中间区域使得可以双向滚动
-    val items = List(totalItems * 1000) { (it + range.first) % (totalItems) + range.first }
+    // 循环滚动：remember 缓存列表，避免每次重组重新创建 24000 个元素
+    val items = remember(totalItems) {
+        List(totalItems * 1000) { (it + range.first) % (totalItems) + range.first }
+    }
     val initialIndex = (items.size / 2) + (selected - range.first)
     val listState: LazyListState = rememberLazyListState(initialFirstVisibleItemIndex = (initialIndex - 1).coerceAtLeast(0))
     val haptic = LocalHapticFeedback.current
@@ -350,7 +354,10 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
     LaunchedEffect(listState) {
         snapshotFlow {
             listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
-        }.collect { (i0, scrollOffset) ->
+        }
+        // 每帧发射，确保高刷下无延迟
+        .distinctUntilChanged()
+        .collect { (i0, scrollOffset) ->
             if (skipInit) {
                 skipInit = false
                 return@collect
@@ -364,7 +371,6 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
     }
 
     // 松手吸附（权威）：滚动停滞后，先就近解析命中的值并强制选中，再将其对齐到中线。
-    // 拖动过程的快照发射可能被节流而漏掉中间值，这里兜底保证松手一定能定到某个值。
     LaunchedEffect(listState) {
         snapshotFlow { listState.isScrollInProgress }
             .collect { scrolling ->
@@ -379,7 +385,7 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(v)
                     }
-                    // 保持滚动位置在中间区域，实现无限循环错觉
+                    // 保持滚动位置在中间区域，实现无限循环
                     val vIndex = (items.size / 2) + (v - range.first)
                     listState.scrollToItem((vIndex - 1).coerceAtLeast(0))
                 }
