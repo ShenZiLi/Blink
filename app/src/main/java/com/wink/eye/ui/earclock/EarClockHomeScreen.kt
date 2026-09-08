@@ -1,5 +1,7 @@
 package com.wink.eye.ui.earclock
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +38,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -88,63 +89,70 @@ fun EarClockHomeScreen(
         )
     }
 
-    key(themeMode.name) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.earclock_home_title)) },
-                    actions = {
-                        IconButton(onClick = { ThemeManager.toggle(context) }) {
-                            Icon(
-                                imageVector = when (themeMode) {
-                                    ThemeMode.LIGHT -> Icons.Default.LightMode
-                                    ThemeMode.DARK -> Icons.Default.ModeNight
-                                },
-                                contentDescription = when (themeMode) {
-                                    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
-                                    ThemeMode.DARK -> stringResource(R.string.theme_dark)
-                                }
-                            )
-                        }
-                        IconButton(onClick = onAddAlarm) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = stringResource(R.string.earclock_add)
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.background
-        ) { padding ->
-            if (alarms.isEmpty()) {
-                EmptyState(modifier = Modifier.padding(padding))
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item { Spacer(Modifier.height(8.dp)) }
-                    items(alarms, key = { it.id }) { alarm ->
-                        Box(Modifier.animateItem()) {
-                            AlarmCard(
-                                alarm = alarm,
-                                onToggle = { viewModel.toggleEnabled(alarm) },
-                                onDelete = { alarmToDelete = alarm },
-                                onClick = { onEditAlarm(alarm.id) }
-                            )
-                        }
+    val bgColor by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.background,
+        animationSpec = tween(300)
+    )
+    val surfaceColor by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.surface,
+        animationSpec = tween(300)
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.earclock_home_title)) },
+                actions = {
+                    IconButton(onClick = { ThemeManager.toggle(context) }) {
+                        Icon(
+                            imageVector = when (themeMode) {
+                                ThemeMode.LIGHT -> Icons.Default.LightMode
+                                ThemeMode.DARK -> Icons.Default.ModeNight
+                            },
+                            contentDescription = when (themeMode) {
+                                ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                                ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                            }
+                        )
                     }
-                    item { Spacer(Modifier.height(8.dp)) }
+                    IconButton(onClick = onAddAlarm) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.earclock_add)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = surfaceColor,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        },
+        containerColor = bgColor
+    ) { padding ->
+        if (alarms.isEmpty()) {
+            EmptyState(modifier = Modifier.padding(padding))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item { Spacer(Modifier.height(8.dp)) }
+                items(alarms, key = { it.id }) { alarm ->
+                    Box(Modifier.animateItem()) {
+                        AlarmCard(
+                            alarm = alarm,
+                            onToggle = { viewModel.toggleEnabled(alarm) },
+                            onDelete = { alarmToDelete = alarm },
+                            onClick = { onEditAlarm(alarm.id) }
+                        )
+                    }
                 }
+                item { Spacer(Modifier.height(8.dp)) }
             }
         }
     }

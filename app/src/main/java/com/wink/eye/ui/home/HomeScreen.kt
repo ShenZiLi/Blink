@@ -1,5 +1,7 @@
 package com.wink.eye.ui.home
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -98,71 +99,78 @@ fun HomeScreen(
         )
     }
 
-    key(themeMode.name) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Wink") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    actions = {
-                        IconButton(onClick = { ThemeManager.toggle(context) }) {
-                            Icon(
-                                imageVector = when (themeMode) {
-                                    ThemeMode.LIGHT -> Icons.Default.LightMode
-                                    ThemeMode.DARK -> Icons.Default.ModeNight
-                                },
-                                contentDescription = when (themeMode) {
-                                    ThemeMode.LIGHT -> stringResource(R.string.theme_light)
-                                    ThemeMode.DARK -> stringResource(R.string.theme_dark)
-                                }
-                            )
-                        }
-                        IconButton(onClick = onAddRule) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = stringResource(R.string.home_add_rule)
-                            )
-                        }
-                    }
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.background
-        ) { padding ->
-            if (rules.isEmpty()) {
-                EmptyState(modifier = Modifier.padding(padding))
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        item { Spacer(Modifier.height(8.dp)) }
-                        items(rules, key = { it.id }) { rule ->
-                            Box(Modifier.animateItem()) {
-                                RuleCard(
-                                    rule = rule,
-                                    onToggle = { viewModel.toggleEnabled(rule) },
-                                    onDelete = { ruleToDelete = rule },
-                                    onClick = { onEditRule(rule.id) }
-                                )
-                            }
-                        }
-                        item { Spacer(Modifier.height(8.dp)) }
-                    }
+    val bgColor by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.background,
+        animationSpec = tween(300)
+    )
+    val surfaceColor by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.surface,
+        animationSpec = tween(300)
+    )
 
-                    if (hasScreenTimeRule) {
-                        DebugInfoPanel(debugInfo)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Wink") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = surfaceColor,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                actions = {
+                    IconButton(onClick = { ThemeManager.toggle(context) }) {
+                        Icon(
+                            imageVector = when (themeMode) {
+                                ThemeMode.LIGHT -> Icons.Default.LightMode
+                                ThemeMode.DARK -> Icons.Default.ModeNight
+                            },
+                            contentDescription = when (themeMode) {
+                                ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                                ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                            }
+                        )
                     }
+                    IconButton(onClick = onAddRule) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.home_add_rule)
+                        )
+                    }
+                }
+            )
+        },
+        containerColor = bgColor
+    ) { padding ->
+        if (rules.isEmpty()) {
+            EmptyState(modifier = Modifier.padding(padding))
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item { Spacer(Modifier.height(8.dp)) }
+                    items(rules, key = { it.id }) { rule ->
+                        Box(Modifier.animateItem()) {
+                            RuleCard(
+                                rule = rule,
+                                onToggle = { viewModel.toggleEnabled(rule) },
+                                onDelete = { ruleToDelete = rule },
+                                onClick = { onEditRule(rule.id) }
+                            )
+                        }
+                    }
+                    item { Spacer(Modifier.height(8.dp)) }
+                }
+
+                if (hasScreenTimeRule) {
+                    DebugInfoPanel(debugInfo)
                 }
             }
         }

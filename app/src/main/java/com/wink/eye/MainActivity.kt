@@ -14,7 +14,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -113,6 +114,8 @@ fun WinkNavHost(repository: RuleRepository) {
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute == "home" || currentRoute == "earclock"
 
+    val routeOrder = listOf("home", "earclock")
+
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
@@ -150,16 +153,28 @@ fun WinkNavHost(repository: RuleRepository) {
             startDestination = "home",
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
-                slideInVertically(initialOffsetY = { it / 16 }) + fadeIn(tween(260))
+                val initialIdx = routeOrder.indexOf(initialState.destination.route)
+                val targetIdx = routeOrder.indexOf(targetState.destination.route)
+                if (targetIdx > initialIdx) {
+                    slideInHorizontally { width -> width } + fadeIn(tween(300))
+                } else {
+                    slideInHorizontally { width -> -width } + fadeIn(tween(300))
+                }
             },
             exitTransition = {
-                fadeOut(tween(220))
+                val initialIdx = routeOrder.indexOf(initialState.destination.route)
+                val targetIdx = routeOrder.indexOf(targetState.destination.route)
+                if (targetIdx > initialIdx) {
+                    slideOutHorizontally { width -> -width } + fadeOut(tween(250))
+                } else {
+                    slideOutHorizontally { width -> width } + fadeOut(tween(250))
+                }
             },
             popEnterTransition = {
-                slideInVertically(initialOffsetY = { -it / 16 }) + fadeIn(tween(260))
+                slideInHorizontally { width -> -width } + fadeIn(tween(300))
             },
             popExitTransition = {
-                fadeOut(tween(220))
+                slideOutHorizontally { width -> width } + fadeOut(tween(250))
             }
         ) {
         composable("home") {
