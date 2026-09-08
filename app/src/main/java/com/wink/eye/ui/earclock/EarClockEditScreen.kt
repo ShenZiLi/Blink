@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -337,6 +338,9 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
     val haptic = LocalHapticFeedback.current
     val itemHeightPx = with(LocalDensity.current) { itemHeight.toPx() }
 
+    // 记住最新 selected，避免 LaunchedEffect(listState) 闭包捕获旧值导致回到初始值(如当前小时)时被判定为“未变化”而漏选。
+    val currentSelected by rememberUpdatedState(selected)
+
     // 跳到首帧：避免初始定位误触发选中/振动
     var skipInit by remember { mutableStateOf(true) }
     LaunchedEffect(listState) {
@@ -348,15 +352,15 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
                 return@collect
             }
             val v = centeredValueFrom(i0, scrollOffset, itemHeightPx)
-            if (v != selected) {
+            if (v != currentSelected) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onSelect(v)
             }
         }
     }
 
-    // 松手吸附：滚动停滞后把命中的值对齐到中线。
-    // 注意：绝不根据 selected 反向 scrollToItem 跟随，否则拖动时与用户滚动打架导致跳值。
+    // 松手吸附（权威）：滚动停滞后，先就近解析命中的值并强制选中，再将其对齐到中线。
+    // 拖动过程的快照发射可能被节流而漏掉中间值，这里兜底保证松手一定能定到某个值。
     LaunchedEffect(listState) {
         snapshotFlow { listState.isScrollInProgress }
             .collect { scrolling ->
@@ -366,6 +370,10 @@ private fun WheelColumn(range: IntRange, selected: Int, onSelect: (Int) -> Unit)
                         listState.firstVisibleItemScrollOffset,
                         itemHeightPx
                     )
+                    if (v != currentSelected) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSelect(v)
+                    }
                     listState.scrollToItem((v - 1).coerceAtLeast(0))
                 }
             }
